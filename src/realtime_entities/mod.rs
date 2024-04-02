@@ -3,6 +3,7 @@ use std::{collections::HashSet, sync::Arc};
 use tauri::Manager;
 
 mod rw_lock;
+mod mutex;
 
 pub struct LiveMaster {
     app_handle: tauri::AppHandle,
@@ -51,5 +52,17 @@ impl LiveMaster {
 
         // Create and return the RW Lock
         rw_lock::LiveRWLock::new(value, self.app_handle.clone())
+    }
+
+    pub fn register_mutex_locked<U: 'static + Serialize + Send + Sync + PartialEq + Clone>(
+        &mut self,
+        value: U,
+    ) -> Arc<mutex::LiveMutex<U>> {
+        // Add to known objects
+        let object_id = crate::event_names::object_id::<U>();
+        self.known_object_ids.write().unwrap().insert(object_id);
+
+        // Create and return the Mutex
+        mutex::LiveMutex::new(value, self.app_handle.clone())
     }
 }
